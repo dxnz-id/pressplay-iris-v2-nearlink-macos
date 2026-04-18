@@ -1,0 +1,110 @@
+name: IRIS macOS Release (stable + changelog + rollback)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 🔥 penting biar bisa generate changelog
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install
+
+      # 📌 Generate version v1.0.3.X
+      - name: Generate version
+        id: version
+        run: |
+          BASE=$(node -p "require('./package.json').version")
+          BUILD=$GITHUB_RUN_NUMBER
+          VERSION="v$BASE.$BUILD"
+
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using version: $VERSION"
+
+      # 📜 Generate changelog dari commit
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            LOG=$(git log --pretty=format:"- %s")
+          else
+            LOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s")
+          fi
+
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$LOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # 🧱 BUILD STEP
+      - name: Build macOS
+        run: npm run package
+
+      # 🏷️ Create Git Tag
+      - name: Create Git Tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git tag ${{ steps.version.outputs.VERSION }}
+          git push origin ${{ steps.version.outputs.VERSION }}
+
+      # 📦 Create GitHub Release
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: IRIS NearLink ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## 🚀 IRIS NearLink Release
+
+            ### 🧾 Changelog
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+          files: build-out/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  rollback:
+    needs: build
+    runs-on: ubuntu-latest
+    if: failure()
+
+    steps:
+      - name: Checkout repo (for tag access)
+        uses: actions/checkout@v4
+
+      - name: Delete Release + Tag (Rollback)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+
+          echo "Rolling back $VERSION"
+
+          # Hapus release
+          gh release delete "$VERSION" -y || true
+
+          # Hapus tag
+          git push --delete origin "$VERSION" || true
