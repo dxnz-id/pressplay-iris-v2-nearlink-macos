@@ -44,7 +44,14 @@ To create a standalone macOS application:
    ```bash
    npm run package
    ```
-3. The built application will be in the `build-out/mac/` directory as `IRIS_V2_NearLink.app`
+3. The built application will be in the `build-out/` directory as `IRIS_V2_NearLink.zip`
+
+**For universal binary (x64 + ARM64):**
+On an Apple Silicon Mac (M1/M2/M3), run both builds:
+```bash
+npm run package:x64
+npm run package:arm64
+```
 
 ### 🚀 Installation & Running
 
@@ -101,7 +108,14 @@ Untuk membuat aplikasi macOS mandiri:
    ```bash
    npm run package
    ```
-3. Aplikasi yang sudah dibangun akan ada di folder `build-out/mac/` sebagai `IRIS_V2_NearLink.app`
+3. Aplikasi yang sudah dibangun akan ada di folder `build-out/` sebagai `IRIS_V2_NearLink.zip`
+
+**Untuk universal binary (x64 + ARM64):**
+Pada Mac dengan Apple Silicon (M1/M2/M3), jalankan kedua build:
+```bash
+npm run package:x64
+npm run package:arm64
+```
 
 ### 🚀 Instalasi & Menjalankan
 

@@ -7,7 +7,9 @@
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
-    "package": "electron-builder --mac zip"
+    "package": "npm run package:x64 && npm run package:arm64",
+    "package:x64": "electron-builder --mac zip --x64 && mv build-out/IRIS\\ v2\\ NearLink.zip build-out/IRIS\\ v2\\ NearLink-x64.zip || true",
+    "package:arm64": "electron-builder --mac zip --arm64 && mv build-out/IRIS\\ v2\\ NearLink.zip build-out/IRIS\\ v2\\ NearLink-arm64.zip || true"
   },
   "dependencies": {
     "axios": "^1.7.2",
