@@ -10,7 +10,7 @@ Bilingual Version: [English](#english) | [Bahasa Indonesia](#bahasa-indonesia)
 
 ## English
 
-This project is a native macOS application for the **Pres PLay IRIS v2 NearLink** Gaming Mouse. Originally only built for Windows with Electron, this version provides seamless HID device communication and full compatibility with modern macOS systems (10.15 and later).
+This project is a native macOS application for the **Press PLay IRIS v2 NearLink** Gaming Mouse. Originally only built for Windows with Electron, this version provides seamless HID device communication and full compatibility with modern macOS systems (10.15 and later).
 
 ### 🖱️ Supported Hardware
 
