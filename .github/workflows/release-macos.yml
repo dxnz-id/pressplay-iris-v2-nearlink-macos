@@ -1,4 +1,4 @@
-name: IRIS macOS Release (stable + changelog + rollback)
+name: IRIS macOS Release (stable + safe changelog + rollback)
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # 🔥 penting biar bisa generate changelog
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,7 +30,7 @@ jobs:
       - name: Install deps
         run: npm install
 
-      # 📌 Generate version v1.0.3.X
+      # 🧠 Generate version
       - name: Generate version
         id: version
         run: |
@@ -41,37 +41,34 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Using version: $VERSION"
 
-      # 📜 Generate changelog dari commit
+      # 📜 Safe changelog (only from last tag)
       - name: Generate Changelog
         id: changelog
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
           if [ -z "$PREV_TAG" ]; then
-            LOG=$(git log --pretty=format:"- %s")
+            LOG=$(git log --pretty=format:"- %s" --max-count=30)
           else
             LOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s")
+          fi
+
+          # fallback kalau kosong
+          if [ -z "$LOG" ]; then
+            LOG="- initial release"
           fi
 
           echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
           echo "$LOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      # 🧱 BUILD STEP
+      # 🧱 Build
       - name: Build macOS
         run: npm run package
 
-      # 🏷️ Create Git Tag
-      - name: Create Git Tag
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          git tag ${{ steps.version.outputs.VERSION }}
-          git push origin ${{ steps.version.outputs.VERSION }}
-
-      # 📦 Create GitHub Release
+      # 📦 Create Release FIRST (lebih safe)
       - name: Create Release
+        id: release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
@@ -86,16 +83,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 🏷️ Tag AFTER release success
+      - name: Create Git Tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git tag ${{ steps.version.outputs.VERSION }}
+          git push origin ${{ steps.version.outputs.VERSION }}
+
   rollback:
     needs: build
     runs-on: ubuntu-latest
     if: failure()
 
     steps:
-      - name: Checkout repo (for tag access)
-        uses: actions/checkout@v4
+      - name: Install GitHub CLI
+        run: sudo apt-get update && sudo apt-get install -y gh
 
-      - name: Delete Release + Tag (Rollback)
+      - name: Delete Release + Tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -103,8 +109,5 @@ jobs:
 
           echo "Rolling back $VERSION"
 
-          # Hapus release
           gh release delete "$VERSION" -y || true
-
-          # Hapus tag
           git push --delete origin "$VERSION" || true
