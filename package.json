@@ -23,7 +23,7 @@
     "vue-router": "^4.4.3"
   },
   "devDependencies": {
-    "electron": "^25.9.8",
+    "electron": "^37.10.3",
     "electron-builder": "^26.8.1"
   },
   "build": {
@@ -31,8 +31,10 @@
     "productName": "IRIS_V2_NearLink",
     "copyright": "Copyright © 2026 HHK",
     "asar": false,
+    "icon": "icon/hhk-512.ico",
     "directories": {
-      "output": "build-out"
+      "output": "build-out",
+      "buildResources": "build"
     },
     "publish": [
       {
