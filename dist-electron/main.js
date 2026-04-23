@@ -15481,7 +15481,7 @@ GA
         }));
       const e = new dd(
           // @ts-ignore
-          wt.join(process.env.VITE_PUBLIC ?? "", "./logo/hhk.png"),
+          wt.join(process.env.VITE_PUBLIC ?? "", "./logo/iconTemplate.png"),
         ),
         t = Nl.buildFromTemplate([
           {
